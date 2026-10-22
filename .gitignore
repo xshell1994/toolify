@@ -1,0 +1,21 @@
+# 本机凭据 —— 绝不入库
+config.yaml
+*.secret
+.env
+.env.*
+
+# 本地改动/历史备份（体积大且非上游状态）
+*.bak-*
+main.py.bak-*
+
+# 运行产物
+*.log
+*.log.*
+logs/
+__pycache__/
+*.py[cod]
+
+# 编辑器 / 系统
+.DS_Store
+.idea/
+.vscode/

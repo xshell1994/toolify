@@ -1,0 +1,115 @@
+# Toolify Configuration Example File
+# Please copy this file as config.yaml and modify the configuration according to your actual needs
+
+# Server configuration
+server:
+  port: 8000                    # Server listening port
+  host: "0.0.0.0"              # Server listening address
+  timeout: 180                  # Request timeout (seconds)
+  upstream_retry_attempts: 3      # Max retries for connection errors/timeouts (0 to disable)
+  upstream_retry_base_delay: 0.5  # Base delay (seconds) for exponential backoff
+  empty_response_retry: 1         # Max retries for empty upstream responses (0 to disable)
+
+# Upstream OpenAI compatible service configuration
+upstream_services:
+  - name: "openai"
+    base_url: "https://api.openai.com/v1"
+    api_key: "your-openai-api-key-here"
+    description: "OpenAI Official Service"
+    is_default: true
+    models:
+      - "gpt-3.5-turbo"
+      - "gpt-3.5-turbo-16k"
+      - "gpt-4"
+      - "gpt-4-turbo"
+      - "gpt-4o"
+      - "gpt-4o-mini"
+
+  - name: "google"
+    base_url: "https://generativelanguage.googleapis.com/v1beta/openai/"
+    api_key: "your-google-api-key-here"
+    description: "Google Gemini Service"
+    is_default: false
+    models:
+      # Use alias "gemini-2.5" to randomly select one of the following models
+      - "gemini-2.5:gemini-2.5-pro"
+      - "gemini-2.5:gemini-2.5-flash"
+      # You can also define models that can be used directly
+      - "gemini-2.5-pro"
+      - "gemini-2.5-flash"
+
+# Client authentication configuration
+client_authentication:
+  allowed_keys:
+    - "sk-my-secret-key-1"
+    - "sk-my-secret-key-2"
+
+# Feature configuration
+features:
+  enable_function_calling: true  # Enable function calling feature
+  log_level: "INFO"              # Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL, or DISABLED
+  convert_developer_to_system: true  # Whether to convert the developer role to the system role
+  key_passthrough: false          # If true, directly forward client-provided API key to upstream instead of using configured upstream key
+  model_passthrough: false         # If true, forward all requests directly to the 'openai' upstream service, ignoring model-based routing
+  
+  # Custom prompt template (optional). If not provided, the default prompt will be used.
+  # The default prompt includes comprehensive features:
+  # - Support for multiple tool calls in a single response
+  # - Context awareness to avoid duplicate tool calls
+  # - Strict parameter matching rules (preserving special characters like hyphens)
+  # - Clear format requirements with correct and incorrect examples
+  # - Tool result tracking via XML tags
+  #
+  # You can uncomment and customize the following template if needed:
+  # prompt_template: |
+  #   Your custom prompt template here...
+  #   Must include {tools_list} and {trigger_signal} placeholders
+
+  # Function calling error retry configuration
+  # When enabled, if the model outputs an invalid function call format,
+  # the system will send the error details back to the model and ask it to retry.
+  enable_fc_error_retry: false       # Enable automatic retry for function call parsing errors (default: false)
+  fc_error_retry_max_attempts: 3     # Maximum retry attempts (1-10, default: 3)
+  
+  # Custom error retry prompt template (optional). If not provided, the default prompt will be used.
+  # Must contain {error_details} and {original_response} placeholders.
+  # fc_error_retry_prompt_template: |
+  #   Your previous response attempted to make a function call but the format was invalid.
+  #   
+  #   **Your original response:**
+  #   {original_response}
+  #   
+  #   **Error details:**
+  #   {error_details}
+  #   
+  #   Please retry and output the function call in the correct XML format as instructed. DO NOT OUTPUT ANYTHING ELSE.
+
+# Configuration explanation:
+# 1. upstream_services: Configure multiple OpenAI compatible API services
+#    - name: Service name (for identification)
+#    - base_url: Base URL of the service
+#    - api_key: API key for the corresponding service
+#    - models: Complete list of models supported by the service
+#    - is_default: Whether it is the default service (used when the requested model is not in any service's model list)
+#    - description: Service description (optional)
+#
+# 2. Routing matching rules:
+#    - The system will exactly match the corresponding service based on the model name in the request
+#    - If the model name is not in the models list of any service, the service with is_default set to true will be used
+#    - There must be one and only one service marked as is_default: true
+#
+# 3. Client authentication:
+#    - allowed_keys: List of client API keys allowed to access this middleware
+#
+# 4. Logging levels:
+#    - DEBUG: Show all debug information (most verbose)
+#    - INFO: Show general information, warnings and errors
+#    - WARNING: Show only warnings and errors
+#    - ERROR: Show only errors
+#    - CRITICAL: Show only critical errors
+#    - DISABLED: Disable all logging
+#
+# 5. Security reminders:
+#    - Please keep API keys safe and do not commit configuration files containing real keys to version control systems
+#    - It is recommended to use different configuration files for different environments
+#    - Environment variables can be used to manage sensitive information

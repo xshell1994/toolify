@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  toolify:
+    image: ghcr.io/funnycups/toolify:latest
+    container_name: toolify
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config.yaml:/app/config.yaml
+    restart: unless-stopped
