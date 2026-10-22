@@ -90,7 +90,9 @@ upstream_services:
       - "spark-x-fast"
       - "spark-x-reason"
       # 联网搜索变体：9002 网关按模型名后缀决定是否发 capabilities
-      # 必须列在这里，否则 Toolify 会把它路由给 is_default 的 genspark 上游
+      # 必须列在这里，否则 Toolify 会把它路由给 is_default 的 genspark 上游；
+      # 注意：omp 侧【不暴露】这些变体（联网统一交给 omp 自己的 web_search 工具），
+      # 这里保留只为防止手输模型名时被静默 fallback。
       - "spark-x-auto-search"
       - "spark-x-auto-nosearch"
       - "spark-x-fast-search"
