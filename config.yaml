@@ -1,0 +1,105 @@
+# Toolify 配置：把 genspark2api 网关(7105→7056)的非原生 function calling
+# 通过「tools 定义注入 prompt + 解析响应还原 tool_calls」补齐为 OpenAI 兼容工具调用。
+# 上游：genspark2api (http://127.0.0.1:7056/v1) —— 纯文本 ai_chat，原生不支持 tools。
+
+server:
+  host: "127.0.0.1"
+  port: 8010
+  timeout: 600                 # genspark claude-sonnet 单轮可能很久
+  upstream_retry_attempts: 3
+  upstream_retry_base_delay: 0.5
+  empty_response_retry: 1
+
+upstream_services:
+  - name: "genspark"
+    base_url: "http://127.0.0.1:7056/v1"
+    api_key: "xk1994527"
+    description: "genspark2api bridge (own-account cookie pool)"
+    is_default: true
+    models:
+      - "gpt-5.4"
+      - "gpt-5.5"
+      - "gpt-5.4-mini"
+      - "gpt-5.4-nano"
+      - "gpt-5.2-pro"
+      - "gpt-5.4-pro"
+      - "o3-pro"
+      - "gpt-5-pro"
+      - "gpt-5.1-low"
+      - "gpt-5.1-medium"
+      - "gpt-5.1-high"
+      - "gpt-5.2"
+      - "claude-sonnet-4-6"
+      - "claude-opus-4-7"
+      - "claude-opus-4-6"
+      - "claude-4-5-haiku"
+      - "claude-sonnet-4"
+      - "claude-sonnet-4-5"
+      - "claude-opus-4-1"
+      - "claude-opus-4-5"
+      - "gemini-2.5-pro"
+      - "gemini-3-flash-preview"
+      - "gemini-3.1-pro-preview"
+      - "gemini-2.5-flash"
+      - "grok-4.20-0309-reasoning"
+      - "grok-4.20-0309-non-reasoning"
+      - "grok-4-0709"
+      - "kimi-k2-instruct"
+      - "groq-kimi-k2-instruct"
+
+  # ── 免登录游客 API（universal-web-api, :8320）────────────────────────────
+  # 三个站点均为「网页版转 OpenAI 兼容」，原生不支持 tools → 交给 Toolify 补齐。
+  # 注意：这些是 guest/匿名渠道，输入上限很紧（notrack 4000 字符、aelius guest
+  # 6144 token），工具注入的 prompt 会占额度，长 tools 描述慎用。
+  - name: "aelius"
+    base_url: "http://127.0.0.1:8320/url/aeliusai.com/v1"
+    api_key: "no-key"
+    description: "Aelius Chat guest via universal-web-api"
+    is_default: false
+    models:
+      - "aelius-web"
+      - "aelius-default"
+
+  - name: "notrack"
+    base_url: "http://127.0.0.1:8320/url/notrack.ai/v1"
+    api_key: "no-key"
+    description: "NoTrack guest via universal-web-api; input cap 4000 chars"
+    is_default: false
+    models:
+      - "notrack-web"
+      - "notrack-default"
+
+  - name: "ecogpt"
+    base_url: "http://127.0.0.1:8320/url/ecogpt.com/v1"
+    api_key: "no-key"
+    description: "EcoGPT anon+JWT via universal-web-api; needs proxy"
+    is_default: false
+    models:
+      - "ecogpt-web"
+      - "ecogpt-default"
+
+  # ── 讯飞星火（本机 9002 网关，星火 web/App 协议转 OpenAI）──────────────
+  # 星火原生不认 tools，会把工具意图当文本吐成 <tool_call> XML → 交给 Toolify 补齐。
+  - name: "spark"
+    base_url: "http://127.0.0.1:9002/v1"
+    api_key: "123"
+    description: "iFlytek Spark X via local 9002 gateway (auto/fast/reason)"
+    is_default: false
+    models:
+      - "spark-x-auto"
+      - "spark-x-fast"
+      - "spark-x-reason"
+
+client_authentication:
+  allowed_keys:
+    - "sk-toolify-genspark"
+
+features:
+  enable_function_calling: true
+  log_level: "INFO"
+  convert_developer_to_system: true
+  key_passthrough: false
+  model_passthrough: false
+  # 弱模型（gpt-4o-mini 等）XML 格式容易写错，开启解析失败自动重试
+  enable_fc_error_retry: true
+  fc_error_retry_max_attempts: 3
