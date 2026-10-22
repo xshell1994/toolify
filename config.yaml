@@ -89,6 +89,27 @@ upstream_services:
       - "spark-x-auto"
       - "spark-x-fast"
       - "spark-x-reason"
+      # 联网搜索变体：9002 网关按模型名后缀决定是否发 capabilities
+      # 必须列在这里，否则 Toolify 会把它路由给 is_default 的 genspark 上游
+      - "spark-x-auto-search"
+      - "spark-x-auto-nosearch"
+      - "spark-x-fast-search"
+      - "spark-x-fast-nosearch"
+      - "spark-x-reason-search"
+      - "spark-x-reason-nosearch"
+# ── Bilibili Index-Translate（本机 18787 bilitrans，翻译模型）──────────────
+# 翻译模型原生不支持 tools，交给 Toolify 补齐 function calling。
+  - name: "bilitrans"
+    base_url: "http://127.0.0.1:18787/v1"
+    api_key: "no-key"
+    description: "Bilibili Index-Translate via local bilitrans proxy (2B/9B/35B-A3B)"
+    is_default: false
+    models:
+      - "Index-Translate-2B"
+      - "Index-Translate-9B"
+      - "Index-Translate-35B-A3B"
+      - "Index-Nailong-9B"
+      - "Index-Nailong-2B"
 
 client_authentication:
   allowed_keys:
