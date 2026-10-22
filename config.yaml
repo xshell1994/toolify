@@ -126,3 +126,39 @@ features:
   # 弱模型（gpt-4o-mini 等）XML 格式容易写错，开启解析失败自动重试
   enable_fc_error_retry: true
   fc_error_retry_max_attempts: 3
+  # ── 注入模板（精简版，2026-10-23）──────────────────────────────────────
+  # 默认模板 3529 字符；星火 prefill 对模板长度敏感（实测约 0.55 s/千字
+  # 外加约 1.2 s 的固定基数），而工具数量几乎无影响（1 个 vs 10 个持平）。
+  # 精简到约 1.0k 字符后首字降约 1.2 s，工具调用成功率不变（各 5/5）。
+  # 注意：本模板会过 str.format(trigger_signal=..., tools_list=...)，
+  # 字面花括号必须写成 {{ }}，否则抛 KeyError。
+  prompt_template: |
+    You can call tools. Available tools:
+
+    {tools_list}
+
+    When you need a tool, output on a new line exactly:
+    {trigger_signal}
+    <function_calls>
+        <function_call>
+            <tool>TOOL_NAME</tool>
+            <args_json>{{"param": "value"}}</args_json>
+        </function_call>
+    </function_calls>
+
+    RULES:
+    - <tool> must be one exact tool name from the list above.
+    - Use parameter keys exactly as defined (case- and punctuation-sensitive); keep leading hyphens (e.g. "-i" stays "-i").
+    - <args_json> must be a single JSON object with all required arguments; you may wrap it in <![CDATA[...]]>.
+    - Output the trigger signal exactly once, on its own line, with no text before it.
+    - To call several tools, put multiple <function_call> blocks inside ONE <function_calls> wrapper.
+    - Add no text or explanation after </function_calls>.
+
+    Example:
+    {trigger_signal}
+    <function_calls>
+        <function_call>
+            <tool>web_search</tool>
+            <args_json><![CDATA[{{"query": "Python 3.14 release notes"}}]]></args_json>
+        </function_call>
+    </function_calls>
